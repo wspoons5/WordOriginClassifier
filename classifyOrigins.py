@@ -5,8 +5,6 @@ def main():
 	infile = open("greekLatinOrigins.txt", "r", encoding = "utf-8")
 	greekSet = set()
 	latinSet = set()
-	unclassifiedSet = set()
-	gramStringMap = nGramMap(2)
 
 	for line in infile:
 		try:
@@ -22,15 +20,15 @@ def main():
 
 		except IndexError:
 			dumb = True
-	latinLetterMap = getLanguageGramFrequency(2, latinSet)
-	greekLetterMap = getLanguageGramFrequency(2, greekSet)
+	latinLetterMap = getLanguageGramFrequency(1, latinSet)
+	greekLetterMap = getLanguageGramFrequency(1, greekSet)
 	
 	noneCount = 0
 	count = len(greekSet)
 	success = 0
 	failure = 0
 	for word in greekSet:
-		origin = getOrigin(2, word, latinLetterMap, greekLetterMap)
+		origin = getOrigin(1, word, latinLetterMap, greekLetterMap)
 		if origin == "Greek":
 			success += 1
 		elif origin == "Latin":
@@ -48,7 +46,7 @@ def main():
 	success = 0
 	failure = 0
 	for word in latinSet:
-		origin = getOrigin(2, word, latinLetterMap, greekLetterMap)
+		origin = getOrigin(1, word, latinLetterMap, greekLetterMap)
 		if origin == "Latin":
 			success += 1
 		elif origin == "Greek":
@@ -94,9 +92,15 @@ def getChiSquare(n, word, expectedMap):
 	observed = list(wordSeqMap.values())
 	expected = [None]*len(wordSeqMap.keys())
 	i = 0
-	for key in wordSeqMap:
-		expected[i] = int(expectedMap[key] * 1000)
-		i += 1
+
+	if n == 2:
+		for key in wordSeqMap:
+			expected[i] = int(round(expectedMap[key] * 1000))
+			i += 1
+	elif n == 1:
+		for key in wordSeqMap:
+			expected[i] = int(round(expectedMap[key] * 50))
+			i += 1
 
 	return stats.chisquare(observed, expected)
 
@@ -164,17 +168,18 @@ def getLanguageGramFrequency(n, wordSet):
 	# print(unclassifiedSet)
 
 def nGramMap(n):
+
 	gramMap = {}
-	letters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
-	           "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
-	combinations = itertools.permutations(letters, n)
-	for i in range(26):
-		for j in range(26):
-			string = "{}{}".format(letters[i], letters[j])
-			if string not in gramMap.keys():
-				gramMap.update({string: 0})
-			else:
-				dumb = True
+	if n == 1:
+		for i in range(26):
+			string = "{}".format(chr(i + 97))
+			gramMap.update({string: 0})
+	elif n == 2:
+		for i in range(26):
+			for j in range(26):
+				string = "{}{}".format(chr(i + 97), chr(j + 97))
+				if string not in gramMap.keys():
+					gramMap.update({string: 0})
 
 	return gramMap
   
