@@ -1,11 +1,12 @@
 from scipy import stats
 import itertools
+import math
 
 def main():
 	infile = open("greekLatinOrigins.txt", "r", encoding = "utf-8")
 	greekSet = set()
 	latinSet = set()
-
+	n = 2
 	for line in infile:
 		try:
 			lineList = line.strip().lower().split("\t")
@@ -20,15 +21,26 @@ def main():
 
 		except IndexError:
 			dumb = True
-	latinLetterMap = getLanguageGramFrequency(1, latinSet)
-	greekLetterMap = getLanguageGramFrequency(1, greekSet)
+	latinLetterMap = getLanguageGramFrequency(n, latinSet)
+	greekLetterMap = getLanguageGramFrequency(n, greekSet)
 	
+	word = "archetype"
+
 	noneCount = 0
 	count = len(greekSet)
 	success = 0
 	failure = 0
 	for word in greekSet:
-		origin = getOrigin(1, word, latinLetterMap, greekLetterMap)
+		observed, greekExpected, latinExpected = getExpectedAndTheoreticalDists(n, word, greekLetterMap, latinLetterMap)
+		latinGstat = computeGStatistic(observed, latinExpected)
+		greekGstat = computeGStatistic(observed, greekExpected)
+		if latinGstat > greekGstat:
+			origin = "Greek"
+		elif greekGstat > latinGstat:
+			origin = "Latin"
+		else:
+			origin = "None"
+
 		if origin == "Greek":
 			success += 1
 		elif origin == "Latin":
@@ -46,7 +58,16 @@ def main():
 	success = 0
 	failure = 0
 	for word in latinSet:
-		origin = getOrigin(1, word, latinLetterMap, greekLetterMap)
+		observed, greekExpected, latinExpected = getExpectedAndTheoreticalDists(n, word, greekLetterMap, latinLetterMap)
+		latinGstat = computeGStatistic(observed, latinExpected)
+		greekGstat = computeGStatistic(observed, greekExpected)
+		if latinGstat > greekGstat:
+			origin = "Greek"
+		elif greekGstat > latinGstat:
+			origin = "Latin"
+		else:
+			origin = "None"
+
 		if origin == "Latin":
 			success += 1
 		elif origin == "Greek":
@@ -58,7 +79,15 @@ def main():
 	print("LATIN\n{} ({:f}) Classified correctly\n{} ({:f}) Classified incorrectly\n{} ({:f}) Could not be classified".format(success, success/count,
 		          	                       																				      failure, failure/count,
 		                            																				          noneCount, noneCount/count))
-	
+
+def computeGStatistic(observed, expected):
+	## Check observed and expected have the same number of 
+	n = len(observed)
+	stat = 0
+	for i in range(n):
+		stat += expected[i] * math.log(observed[i] / expected[i])
+	return 2*stat
+
 def getOrigin(n, word, latinLetterMap, greekLetterMap):
 	greekStat, greekPval = getChiSquare(n, word, greekLetterMap)
 	latinStat, latinPval = getChiSquare(n, word, latinLetterMap)
@@ -70,8 +99,8 @@ def getOrigin(n, word, latinLetterMap, greekLetterMap):
 	else:
 		return "None"
 
-def getChiSquare(n, word, expectedMap):
-	wordSeqMap = {}
+def getExpectedAndTheoreticalDists(n, word, greekMap, latinMap):
+	expected = {}	
 	for i in range((len(word) - n) + 1):
 		seq = ""
 		for j in range(n):
@@ -83,26 +112,25 @@ def getChiSquare(n, word, expectedMap):
 			else:
 				allLettersAlpha = False
 		if allLettersAlpha:
-			if seq in wordSeqMap.keys():
-				wordSeqMap[seq] += 1
+			if seq in expected.keys():
+				expected[seq] += 1
 			else:
-				wordSeqMap.update({seq:1})
+				expected.update({seq:1})
 		seq = ""
 
-	observed = list(wordSeqMap.values())
-	expected = [None]*len(wordSeqMap.keys())
+	observed = list(expected.values())
+	categoryCount = len(expected.keys())
+	latinExpected = [categoryCount]*categoryCount
+	greekExpected = [categoryCount]*categoryCount
+
+
 	i = 0
+	for key in expected.keys():
+		latinExpected[i] *= latinMap[key]
+		greekExpected[i] *= greekMap[key]
+		i += 1
 
-	if n == 2:
-		for key in wordSeqMap:
-			expected[i] = int(round(expectedMap[key] * 1000))
-			i += 1
-	elif n == 1:
-		for key in wordSeqMap:
-			expected[i] = int(round(expectedMap[key] * 50))
-			i += 1
-
-	return stats.chisquare(observed, expected)
+	return observed, latinExpected, greekExpected
 
 
 def getLanguageGramFrequency(n, wordSet):
@@ -118,7 +146,10 @@ def getLanguageGramFrequency(n, wordSet):
 
 	totalCount = sum(gramMap.values())
 	for key in gramMap.keys():
-		gramMap[key] /= totalCount
+		if gramMap[key] == 0:
+			gramMap[key] = 0.0000000000000000000000000000000001 ## Handles divide by zero errors for stat computation
+		else:
+			gramMap[key] /= totalCount
 
 	return gramMap
 
