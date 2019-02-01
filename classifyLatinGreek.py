@@ -37,7 +37,9 @@ def testClassification(wordSet, greekTable, latinTable, language):
 				success += 1
 			else:
 				failure += 1
-	print("{:f} success rate and {:f} failure rate out of {} total words.".format(success / (success + failure), failure / (success + failure), success + failure))
+	print("{:f} success rate and {:f} failure rate out of {} total words of {} origin.".format(success / (success + failure), 
+		                                                                                       failure / (success + failure), 
+		                                                                                       success + failure), language)
 
 '''
 This method takes an input word and classifies it as either of Greek or Latin origin. It classifies
