@@ -17,7 +17,15 @@ def main():
 	greekWordFile.close()
 
 '''
-This method attempts to classify every 
+This method tests the classification system on a word set of latin or greek words and prints the
+test output to the screen.
+
+Input:
+wordSet: A set of unique words all of either Latin or Greek origin
+greekTable: A 26x27 matrix containing the conditional letter counts for English words of Greek origin. 
+latinTable: A 26x27 matrix containing the conditional letter counts for English words of Latin origin.
+language: A string that is either "greek" or "latin" which represents the language origin of the words
+          in wordSet
 '''
 def testClassification(wordSet, greekTable, latinTable, language):
 	success = 0
