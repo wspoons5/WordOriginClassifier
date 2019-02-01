@@ -155,8 +155,7 @@ This method takes a char and returns True if the char is an element of ascii[a-z
 def isLetter(char):
 	if 97 <= ord(char) and ord(char) <= 122:
 		return True
-	else:
-		return False
+	return False
 
 '''
 This method takes a string and returns True if every char in the string is an element of ascii[a-z] 
